@@ -10,8 +10,6 @@ import models
 
 perms = {'classes': {}}
 
-for
-
 def get_permission_types(obj):
     perms = ()
     if hasattr(obj.__class__._meta, 'cerberus'):

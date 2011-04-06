@@ -5,17 +5,17 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
 
 """
-Perform basic tests & normal inheritance
+Perform basic tests & normal inheritance.
 """
 
 class BasicAnimal(models.Model):
     class Meta:
         cerberus = {
             'object': (
-                ("pet", "Pet", "The user can eat this animal."),
+                ("pet", "Pet", "The user can pet this animal."),
             ),
             'class': (
-                ("pet", "Pet", "The user can eat all animals."),
+                ("pet", "Pet", "The user can pet all animals."),
             )
         }
     name = models.CharField(max_length=100)
@@ -33,6 +33,23 @@ class BasicTest(TestCase):
         self.assertTrue(self.user.has_perm('pet', self.fido))
         self.user.remove_perm('pet', self.fido)
         self.assertFalse(self.user.has_perm('pet', self.fido))
+    def test_number_queries(self):
+        self.assertNumQueries(1,
+            self.user.has_perm,
+            'pet',
+            self.fido)
+
+class ClassPermissionsTest(TestCase):
+    def setUp(self):
+        self.fido = BasicAnimal(name="fido")
+        self.fido.save()
+
+        self.user = User.objects.create_user('testme', 'testing@test.com', 'testingpw')
+        self.user.save()
+    def test_class_permissions(self):
+        self.user.set_perm('pet', BasicAnimal)
+        self.assertTrue(self.user.has_perm('pet', self.fido))
+        self.assertTrue(self.user.has_perm('pet', self.fido.__class__))
 
 class BasicDog(BasicAnimal):
     breed = models.CharField(max_length=100)
@@ -48,6 +65,9 @@ class InheritanceTest(TestCase):
         self.assertFalse(self.user.has_perm('pet', self.fido))
         self.user.set_perm('pet', self.fido)
         self.assertTrue(self.user.has_perm('pet', self.fido))
+    def test_class_inheritance(self):
+        self.assertTrue(self.user.has_perm('pet', self.fido))
+
 
 """
 Perform tests on abstract inheritance

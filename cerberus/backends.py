@@ -3,6 +3,7 @@ logging.basicConfig(filename="/home/www/cerberuslog.log", level=logging.DEBUG)
 
 from django.contrib.auth.models import User
 from django.contrib.auth.backends import ModelBackend
+from django.db.models import Model
 
 import cerberus
 import models
@@ -20,12 +21,19 @@ class CerberusBackend(object):
         """
         if not obj:
             return False
-
+        
         if not user_obj.is_authenticated():
             return False
-
+        
         if user_obj.is_superuser:
             return True
+        
+        if isinstance(obj, Model):
+            pass
+        
+        elif issubclass(obj, Model):
+            pass
+
         
         logging.debug("Requested permission is: " + str(perm) + " on obj " + str(obj)) 
         permissions = cerberus.get_perms(user_obj, obj)

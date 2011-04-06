@@ -18,3 +18,15 @@ class UserObjectPermission(ObjectPermissionBase):
 
 class GroupObjectPermission(ObjectPermissionBase):
     group = models.ForeignKey(Group)
+
+class ClassPermissionBase(models.Model):
+    codename = models.CharField(_('codename'), max_length=100)
+    content_type = models.ForeignKey(ContentType)
+    class Meta:
+        abstract = True
+ 
+class UserClassPermission(ClassPermissionBase):
+    user = models.ForeignKey(User)
+
+class GroupClassPermission(ClassPermissionBase):
+    group = models.ForeignKey(Group)

@@ -1,4 +1,5 @@
 import django.db.models.options as options
+from django.db.models import Model
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
@@ -6,6 +7,10 @@ from django.contrib.auth.models import Group
 options.DEFAULT_NAMES += ('cerberus', 'cerberus_implies', 'cerberus_mutex')
 
 import models
+
+perms = {'classes': {}}
+
+for
 
 def get_permission_types(obj):
     perms = ()
@@ -24,21 +29,49 @@ def get_permission_types(obj):
         perm_dicts.append({'name': p[0], 'display': p[1], 'description': p[2]})
     return perm_dicts
 
-def _set_perm(self, permission, obj):
-    content_type = ContentType.objects.get_for_model(obj.__class__)
-    if isinstance(self, User):
-        pmo = models.UserObjectPermission(user=self, codename=permission, content_type=content_type, object_pk=obj.pk)
+def _set_perm(self, permission, obj_or_cls):
+    if isinstance(obj_or_cls, Model):
+        content_type = ContentType.objects.get_for_model(obj_or_cls.__class__)
+        if isinstance(self, User):
+            pmo = models.UserObjectPermission(user=self, codename=permission, content_type=content_type, object_pk=obj_or_cls.pk)
+        elif isinstance(self, Group):
+            pmo = models.GroupObjectPermission(group=self, codename=permission, content_type=content_type, object_pk=obj_or_cls.pk)
+        else:
+            raise ValueError("First argument must be User or Group object.")
+    elif issubclass(obj_or_cls, Model):
+        content_type = ContentType.objects.get_for_model(obj_or_cls)
+        if isinstance(self, User):
+            pmo = models.UserClassPermission(user=self, codename=permission, content_type=content_type)
+        elif isinstance(self, Group):
+            pmo = models.GroupClassPermission(group=self, codename=permission, content_type=content_type)
+        else:
+            raise ValueError("First argument must be a User or Group object.")
     else:
-        pmo = models.GroupObjectPermission(group=self, codename=permission, content_type=content_type, object_pk=obj.pk)
+        raise ValueError("Set permission must take a model class or instance as second argument")
     pmo.save()
+    return True
 
-def _remove_perm(self, permission, obj):
-    content_type = ContentType.objects.get_for_model(obj.__class__)
-    if isinstance(self, User):
-        pmo = models.UserObjectPermission.objects.filter(user=self).filter(codename=permission).filter(content_type=content_type).get(object_pk=obj.pk)
+def _remove_perm(self, permission, obj_or_cls):
+    if isinstance(obj_or_cls, Model):
+        content_type = ContentType.objects.get_for_model(obj_or_cls.__class__)
+        if isinstance(self, User):
+            pmo = models.UserObjectPermission.objects.get(user=self, codename=permission, content_type=content_type, object_pk=obj_or_cls.pk)
+        elif isinstance(self, Group):
+            pmo = models.GroupObjectPermission.objects.get(group=self, codename=permission, content_type=content_type, object_pk=obj_or_cls.pk)
+        else:
+            raise ValueError("First argument must be a User or Group object.")
+    elif issubclass(obj_or_cls, Model):
+        content_type = ContentType.objects.get_for_model(obj_or_cls)
+        if isinstance(self, User):
+            pmo = models.UserClassPermission.objects.get(user=self, codename=permission, content_type=content_type)
+        elif isinstance(self, Group):
+            pmo = models.GroupClassPermission.objects.get(group=self, codename=permission, content_type=content_type)
+        else:
+            raise ValueError("First argument must be a User or Group object.")
     else:
-        pmo = models.GroupObjectPermission.objects.filter(group=self).filter(codename=permission).filter(content_type=content_type).get(object_pk=obj.pk)
+        raise ValueError("Remove permission must take a model class or instance as second argument")
     pmo.delete()
+    return True
 
 def get_perms(self, obj):
     content_type = ContentType.objects.get_for_model(obj.__class__)

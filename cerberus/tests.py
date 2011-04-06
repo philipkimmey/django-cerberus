@@ -10,10 +10,14 @@ Perform basic tests & normal inheritance
 
 class BasicAnimal(models.Model):
     class Meta:
-        cerberus = (
-            ("pet", "Pet", "The user can eat this animal."),
-            ("eat", "Eat", "The user is allowed to eat this animal."),
-        )
+        cerberus = {
+            'object': (
+                ("pet", "Pet", "The user can eat this animal."),
+            ),
+            'class': (
+                ("pet", "Pet", "The user can eat all animals."),
+            )
+        }
     name = models.CharField(max_length=100)
 
 class BasicTest(TestCase):

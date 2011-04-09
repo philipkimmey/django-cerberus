@@ -34,7 +34,4 @@ class CerberusBackend(object):
         elif issubclass(obj, Model):
             pass
 
-        
-        logging.debug("Requested permission is: " + str(perm) + " on obj " + str(obj)) 
-        permissions = cerberus.get_perms(user_obj, obj)
-        return perm in permissions
+        return cerberus.has_perm(user_obj, obj, perm)

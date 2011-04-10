@@ -81,14 +81,14 @@ TEMPLATE_DIRS = (
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
-    'django-cerberus.cerberus.backends.CerberusBackend',
+    'cerberus.backends.CerberusBackend',
 )
 
 INSTALLED_APPS = (
+    'cerberus',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.messages',
-    'cerberus',
 )

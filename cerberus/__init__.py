@@ -1,3 +1,4 @@
+from django.db.models.signals import class_prepared
 import django.db.models.options as options
 from django.db.models import Model
 from django.contrib.contenttypes.models import ContentType
@@ -40,50 +41,47 @@ class CerberusModelPermission(object):
     def get_class_perm_residence(self, perm):
         pass
 
+
 perms_dict = {}
 
-cls_queue = Model.__subclasses__()
-
-while cls_queue:
-    cls = cls_queue.pop(0)
-    print "cls: " + cls.__name__
-    cls_queue += cls.__subclasses__()
-    perms_dict[cls] = CerberusModelPermission(cls=cls)
-    if hasattr(cls, '_meta') and hasattr(cls._meta, 'cerberus'):
-        if 'object' in cls._meta.cerberus:
-            for p in cls._meta.cerberus['object']:
-                perms_dict[cls].object_perms[p[0]] = CerberusPermission(
-                        cls=cls, codename=p[0],
+def model_registered(sender, **kwargs):
+    if sender is Model:
+        return
+    for parent in sender.__bases__:
+        model_registered(parent)
+    if sender not in perms_dict:
+        print 'adding : ' + repr(sender)
+        perms_dict[sender] = CerberusModelPermission(cls=sender)
+        # build inherited objects here
+        for parent in sender.__bases__:
+            if parent is Model:
+                continue
+            for p in perms_dict[parent].object_perms.keys():
+                perms_dict[sender].object_perms[p] = perms_dict[parent].object_perms[p]
+                if not sender._meta.abstract and perms_dict[sender].object_perms[p].abstract:
+                    perms_dict[sender].object_perms[p] = perms_dict[sender].object_perms[p].clone_non_abstract(sender)
+            for p in perms_dict[parent].class_perms.keys():
+                perms_dict[sender].class_perms[p] = perms_dict[parent].class_perms[p]
+                if not sender._meta.abstract and perms_dict[sender].class_perms[p].abstract:
+                    perms_dict[sender].class_perms[p] = perms_dict[sender].object_perms[p].clone_non_abstract(sender)
+        # build this model's dictionary here
+        if hasattr(sender, '_meta') and hasattr(sender._meta, 'cerberus'):
+            if 'object' in sender._meta.cerberus:
+                for p in sender._meta.cerberus['object']:
+                    perms_dict[sender].object_perms[p[0]] = CerberusPermission(
+                        cls=sender, codename=p[0],
                         text=p[1], description=p[2])
-                if hasattr(cls._meta, 'abstract') and cls._meta.abstract:
-                    perms_dict[cls].object_perms[p[0]].abstract = True
-        if 'class' in cls._meta.cerberus:
-            for p in cls._meta.cerberus['class']:
-                perms_dict[cls].class_perms[p[0]] = CerberusPermission(
-                        cls=cls, codename=p[0],
+                if hasattr(sender._meta, 'abstract') and sender._meta.abstract:
+                    perms_dict[sender].object_perms[p[0]].abstract = True
+            if 'class' in sender._meta.cerberus:
+                for p in sender._meta.cerberus['class']:
+                    perms_dict[sender].class_perms[p[0]] = CerberusPermission(
+                        cls=sender, codename=p[0],
                         text=p[1], description=p[2])
-                if hasattr(cls._meta, 'abstract') and cls._meta.abstract:
-                    perms_dict[cls].class_perms[p[0]].abstract = True
-    # walk back up inheritance hierarchy and assign perms to proper location
-    for scls in cls.__bases__:
-        if scls is Model:
-            continue
-        if not set(perms_dict[cls].object_perms.keys()).isdisjoint(perms_dict[scls].object_perms.keys()):
-            raise Exception("Cannot redefine cerberus object permission")
-        perms_dict[cls].object_perms = dict(perms_dict[cls].object_perms, **perms_dict[scls].object_perms)
-        if (not hasattr(cls._meta, 'abstract')) or (not cls._meta.abstract):
-            for p in perms_dict[cls].object_perms.keys():
-                if perms_dict[cls].object_perms[p].abstract:
-                    perms_dict[cls].object_perms[p] = perms_dict[cls].object_perms[p].clone_non_abstract(cls)
-        if not set(perms_dict[cls].class_perms.keys()).isdisjoint(perms_dict[scls].class_perms.keys()):
-            raise Exception("Cannot redefine cerberus class permission")
-        perms_dict[cls].class_perms = dict(perms_dict[cls].class_perms, **(perms_dict[scls].class_perms))
-        if (not hasattr(cls._meta, 'abstract')) or (not cls._meta.abstract):
-            for p in perms_dict[cls].class_perms.keys():
-                if perms_dict[cls].class_perms[p].abstract:
-                    perms_dict[cls].class_perms[p] = perms_dict[cls].class_perms[p].clone_non_abstract(cls)
+                if hasattr(sender._meta, 'abstract') and sender._meta.abstract:
+                    perms_dict[sender].class_perms[p[0]].abstract = True
 
-print perms_dict.keys()
+class_prepared.connect(model_registered)
 
 def get_perm_content_type(obj, perm):
     """
@@ -96,6 +94,7 @@ def get_perm_content_type(obj, perm):
     This means if you needed to list all Animal objects the user can
     'pet', you can do it in very few queries.
     """
+    print 'perms dict: ' + repr(perms_dict)
     if isinstance(obj, Model):
         return ContentType.objects.get_for_model(
                 perms_dict[obj.__class__].object_perms[perm].cls    

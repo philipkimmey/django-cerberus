@@ -5,6 +5,8 @@ from django.contrib.contenttypes import generic
 from django.contrib.auth.models import User, Group
 from django.utils.translation import ugettext_lazy as _
 
+print "models.py run"
+
 class ObjectPermissionBase(models.Model):
     codename = models.CharField(_('codename'), max_length=100)
     content_type = models.ForeignKey(ContentType)

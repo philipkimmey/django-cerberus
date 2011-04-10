@@ -1,6 +1,3 @@
-import logging
-logging.basicConfig(filename="/home/www/cerberuslog.log", level=logging.DEBUG)
-
 from django.contrib.auth.models import User
 from django.contrib.auth.backends import ModelBackend
 from django.db.models import Model

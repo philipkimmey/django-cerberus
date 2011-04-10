@@ -50,7 +50,6 @@ def model_registered(sender, **kwargs):
     for parent in sender.__bases__:
         model_registered(parent)
     if sender not in perms_dict:
-        print 'adding : ' + repr(sender)
         perms_dict[sender] = CerberusModelPermission(cls=sender)
         # build inherited objects here
         for parent in sender.__bases__:
@@ -94,7 +93,6 @@ def get_perm_content_type(obj, perm):
     This means if you needed to list all Animal objects the user can
     'pet', you can do it in very few queries.
     """
-    print 'perms dict: ' + repr(perms_dict)
     if isinstance(obj, Model):
         return ContentType.objects.get_for_model(
                 perms_dict[obj.__class__].object_perms[perm].cls    

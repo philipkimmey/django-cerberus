@@ -90,10 +90,14 @@ Perform tests on abstract inheritance
 
 class AbstractAnimal(models.Model):
     class Meta:
-        cerberus = (
-            ("pet", "Pet", "The user can eat this animal."),
-            ("eat", "Eat", "The user is allowed to eat this animal."),
-        )
+        cerberus = {
+            'object': (
+                ("pet", "Pet", "The user can pet this animal."),
+            ),
+            'class': (
+                ("pet", "Pet", "The user can pet all animals."),
+            )
+        }
         abstract = True
     name = models.CharField(max_length=100)
 

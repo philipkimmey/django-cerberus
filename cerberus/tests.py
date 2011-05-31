@@ -28,7 +28,7 @@ class BasicAnimal(models.Model):
         }
     name = models.CharField(max_length=100)
 
-class BasicTest(TestCase):
+class BasicUserTest(TestCase):
     def setUp(self):
         self.fido = BasicAnimal(name="fido")
         self.fido.save()
@@ -46,6 +46,29 @@ class BasicTest(TestCase):
             self.user.has_perm,
             'pet',
             self.fido)
+
+class BasicGroupTest(TestCase):
+    def setUp(self):
+        self.fido = BasicAnimal(name="fido")
+        self.fido.save()
+
+        self.user1 = User.objects.create_user('testme', 'testing@test.com', 'testingpw')
+        self.user1.save()
+
+        self.user2 = User.objects.create_user('testme2', 'testing2@test.com', 'testingpw')
+        self.user2.save()
+
+        self.group = Group(name='testgroup')
+        self.group.save()
+    def test_basic_group_permissions(self):
+        self.assertFalse(self.user1.has_perm('pet', self.fido))
+        self.group.set_perm('pet', self.fido)
+        self.assertFalse(self.user1.has_perm('pet', self.fido))
+        self.user1.groups.add(self.group)
+        self.assertTrue(self.user1.has_perm('pet', self.fido))
+        self.assertFalse(self.user2.has_perm('pet', self.fido))
+        self.user2.groups.add(self.group)
+        self.assertTrue(self.user2.has_perm('pet', self.fido))
 
 class ClassPermissionsTest(TestCase):
     def setUp(self):

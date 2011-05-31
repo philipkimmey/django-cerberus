@@ -41,11 +41,12 @@ class BasicUserTest(TestCase):
         self.assertTrue(self.user.has_perm('pet', self.fido))
         self.user.remove_perm('pet', self.fido)
         self.assertFalse(self.user.has_perm('pet', self.fido))
-    def test_number_queries(self):
-        self.assertNumQueries(2,
-            self.user.has_perm,
-            'pet',
-            self.fido)
+    def test_class_permissions(self):
+        self.assertFalse(self.user.has_perm('pet', self.fido))
+        self.assertFalse(self.user.has_perm('pet', self.fido.__class__))
+        self.user.set_perm('pet', BasicAnimal)
+        self.assertTrue(self.user.has_perm('pet', self.fido))
+        self.assertTrue(self.user.has_perm('pet', self.fido.__class__))
 
 class BasicGroupTest(TestCase):
     def setUp(self):
@@ -69,18 +70,6 @@ class BasicGroupTest(TestCase):
         self.assertFalse(self.user2.has_perm('pet', self.fido))
         self.user2.groups.add(self.group)
         self.assertTrue(self.user2.has_perm('pet', self.fido))
-
-class ClassPermissionsTest(TestCase):
-    def setUp(self):
-        self.fido = BasicAnimal(name="fido")
-        self.fido.save()
-
-        self.user = User.objects.create_user('testme', 'testing@test.com', 'testingpw')
-        self.user.save()
-    def test_class_permissions(self):
-        self.user.set_perm('pet', BasicAnimal)
-        self.assertTrue(self.user.has_perm('pet', self.fido))
-        self.assertTrue(self.user.has_perm('pet', self.fido.__class__))
 
 class BasicDog(BasicAnimal):
     breed = models.CharField(max_length=100)

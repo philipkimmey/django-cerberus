@@ -169,9 +169,25 @@ def __extract_codenames(values):
         codenames.add(obj['codename'])
     return codenames
 
+def __user_has_obj_permission(content_type, object_pk, user, perm):
+    # first check direct user perms
+    if models.UserObjectPermission.objects.filter(content_type=content_type,
+            object_pk=object_pk, user=user, codename=perm).exists():
+        return True
+    # check if users groups pass for true
+    if models.GroupObjectPermission.objects.filter(content_type=content_type,
+            object_pk=object_pk, group__in=user.groups.all(), codename=perm).exists():
+        return True
+    # check if class perm sets it
+    if models.UserClassPermission.objects.filter(content_type=content_type,
+            user=user, codename=perm).exists():
+        return True
+    return False
+
 def has_perm(self, obj, perm):
     content_type = get_perm_content_type(obj, perm) 
     if isinstance(obj, Model):
+        return __user_has_obj_permission(content_type, obj.pk, self, perm)
         if models.UserObjectPermission.objects.filter(content_type=content_type).filter(object_pk=obj.pk).filter(user=self).filter(codename=perm).exists():
             return True
     if models.UserClassPermission.objects.filter(content_type=content_type).filter(user=self).filter(codename=perm).exists():

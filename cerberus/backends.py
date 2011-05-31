@@ -31,4 +31,4 @@ class CerberusBackend(object):
         elif issubclass(obj, Model):
             pass
 
-        return cerberus.has_perm(user_obj, obj, perm)
+        return cerberus.has_perm(user_obj, perm, obj)

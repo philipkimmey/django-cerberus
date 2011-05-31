@@ -45,6 +45,10 @@ class CerberusModelPermission(object):
 perms_dict = {}
 
 def model_registered(sender, **kwargs):
+    """
+    Handle model registration as they are
+    registered with Django.
+    """
     if sender is Model:
         return
     for parent in sender.__bases__:
@@ -182,15 +186,30 @@ def __user_has_obj_permission(content_type, object_pk, user, perm):
     if models.UserClassPermission.objects.filter(content_type=content_type,
             user=user, codename=perm).exists():
         return True
+    if models.GroupClassPermission.objects.filter(content_type=content_type,
+            group__in=user.groups.all(), codename=perm).exists():
+        return True
     return False
 
-def has_perm(self, obj, perm):
+def has_perm(self, perm, obj):
     content_type = get_perm_content_type(obj, perm) 
     if isinstance(obj, Model):
         return __user_has_obj_permission(content_type, obj.pk, self, perm)
-        if models.UserObjectPermission.objects.filter(content_type=content_type).filter(object_pk=obj.pk).filter(user=self).filter(codename=perm).exists():
-            return True
     if models.UserClassPermission.objects.filter(content_type=content_type).filter(user=self).filter(codename=perm).exists():
+        return True
+    if models.GroupClassPermission.objects.filter(content_type=content_type,
+            group__in=self.groups.all(), codename=perm).exists():
+        return True
+    return False
+
+def group_has_perm(self, perm, obj):
+    content_type = get_perm_content_type(obj, perm)
+    if isinstance(obj, Model):
+        if models.GroupObjectPermission.objects.filter(content_type=content_type,
+                object_pk=obj.pk, group=self, codename=perm).exists():
+            return True
+    if models.GroupClassPermission.objects.filter(content_type=content_type,
+            group=self, codename=perm).exists():
         return True
     return False
 
@@ -212,9 +231,14 @@ def get_perms(self, obj):
     response = response.union(__extract_codenames(user_cls_perms))
     return response
 
+# has_perm is automatically used on User
+# because this is an auth handler.
+# Other functions must be set manually
+# by setattr.
 setattr(User, 'set_perm', set_perm)
 setattr(Group, 'set_perm', set_perm)
 setattr(User, 'remove_perm', _remove_perm)
 setattr(Group, 'remove_perm', _remove_perm)
 setattr(User, 'get_perms', get_perms)
 setattr(Group, 'get_perms', get_perms)
+setattr(Group, 'has_perm', group_has_perm)

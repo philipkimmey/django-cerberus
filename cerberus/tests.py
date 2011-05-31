@@ -29,6 +29,10 @@ class BasicAnimal(models.Model):
     name = models.CharField(max_length=100)
 
 class BasicUserTest(TestCase):
+    """
+    Tests for user permissions on models
+    with no inheritance.
+    """
     def setUp(self):
         self.fido = BasicAnimal(name="fido")
         self.fido.save()
@@ -37,11 +41,12 @@ class BasicUserTest(TestCase):
         self.user.save()
     def test_basic_user_permissions(self):
         self.assertFalse(self.user.has_perm('pet', self.fido))
+        self.assertFalse(self.user.has_perm('pet'))
         self.user.set_perm('pet', self.fido)
         self.assertTrue(self.user.has_perm('pet', self.fido))
         self.user.remove_perm('pet', self.fido)
         self.assertFalse(self.user.has_perm('pet', self.fido))
-    def test_class_permissions(self):
+    def test_user_class_permissions(self):
         self.assertFalse(self.user.has_perm('pet', self.fido))
         self.assertFalse(self.user.has_perm('pet', self.fido.__class__))
         self.user.set_perm('pet', BasicAnimal)
@@ -49,6 +54,10 @@ class BasicUserTest(TestCase):
         self.assertTrue(self.user.has_perm('pet', self.fido.__class__))
 
 class BasicGroupTest(TestCase):
+    """
+    Tests for group permissions on models
+    with no inheritance.
+    """
     def setUp(self):
         self.fido = BasicAnimal(name="fido")
         self.fido.save()
@@ -70,6 +79,16 @@ class BasicGroupTest(TestCase):
         self.assertFalse(self.user2.has_perm('pet', self.fido))
         self.user2.groups.add(self.group)
         self.assertTrue(self.user2.has_perm('pet', self.fido))
+        self.assertTrue(self.group.has_perm('pet', self.fido))
+    def test_group_class_permissions(self):
+        self.assertFalse(self.user1.has_perm('pet', self.fido))
+        self.assertFalse(self.user2.has_perm('pet', self.fido))
+        self.group.set_perm('pet', self.fido.__class__)
+        self.assertFalse(self.user1.has_perm('pet', self.fido))
+        self.assertFalse(self.user1.has_perm('pet', self.fido.__class__))
+        self.user1.groups.add(self.group)
+        self.assertTrue(self.user1.has_perm('pet', self.fido))
+        self.assertTrue(self.user1.has_perm('pet', self.fido.__class__))
 
 class BasicDog(BasicAnimal):
     breed = models.CharField(max_length=100)

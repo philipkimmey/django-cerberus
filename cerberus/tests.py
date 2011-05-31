@@ -8,11 +8,6 @@ from django.contrib.auth.models import Group
 import cerberus
 
 """
-Perform tests on cerberus components
-"""
-
-
-"""
 Perform basic tests & normal inheritance.
 """
 
@@ -93,7 +88,7 @@ class BasicGroupTest(TestCase):
 class BasicDog(BasicAnimal):
     breed = models.CharField(max_length=100)
 
-class InheritanceTest(TestCase):
+class UserInheritanceTest(TestCase):
     def setUp(self):
         self.fido = BasicDog(name="fido", breed="Golden Lab")
         self.fido.save()
@@ -114,6 +109,24 @@ class InheritanceTest(TestCase):
         self.user.set_perm('pet', BasicAnimal)
         self.assertTrue(self.user.has_perm('pet', self.fido))
 
+class GroupInheritanceTest(TestCase):
+    def setUp(self):
+        self.fido = BasicDog(name="fido", breed="Golden Lab")
+        self.fido.save()
+
+        self.user1 = User.objects.create_user('testme1',
+                'testing@test.com', 'testingpw')
+        self.user1.save()
+
+        self.user2 = User.objects.create_user('testme2',
+                'testing2@test.com', 'testingpw')
+        self.user2.save()
+        
+        self.group = Group(name='testgroup')
+        self.group.save()
+    def test_group_inheritance(self):
+        self.assertFalse(self.user1.has_perm('pet', self.fido))
+        self.assertFalse(self.group.has_perm('pet', self.fido))
 
 """
 Perform tests on abstract inheritance

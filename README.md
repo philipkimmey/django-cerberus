@@ -11,7 +11,7 @@ The general ideas are:
 ### Usage
 
 (These examples are also in tests.py)
-
+```python
 class Animal(models.Model):
     name = models.CharField(max_length=100)
     class Meta:
@@ -33,3 +33,4 @@ False
 >>> user.set_perm('pet', animal)
 >>> user.has_perm('pet', animal)
 True
+```

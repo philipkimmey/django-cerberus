@@ -1,11 +1,13 @@
 {% extends 'cerberus/base.html' %}
 {% load cerberus %}
+{% block page_title %}Edit Permissions on "{{ clsname }}"{% endblock %}
 {% block content %}
-    <h1>Permissions on "{{ clsname }}"</h1>
+    <h1>Edit Permissions on "{{ clsname }}"</h1>
     {# user perms #}
+    <form method="POST">{% csrf_token %}
     <table>
         <thead>
-                <th>User</th>
+            <th>User</th>
             {% for codename, obj in class_perms.items %}
                 <th title="{{ obj.description }}">{{ obj.text }}</th>
             {% endfor %}
@@ -15,7 +17,11 @@
                 <tr>
                     <td title="Groups: {% for group in user.groups.all %}{{ group }}{% if not forloop.last %}, {% endif %}{% empty %}User does not belong to any groups.{% endfor %}">{{ user.username }}</td>
                     {% for codename, obj in class_perms.items %}
-                        <td>
+                    <td>
+                            {% if codename in user.class_perms_user_only %}
+                            <input type="hidden" name="user_perms_original_{{ user.pk }}" value="{{ codename }}" />
+                            {% endif %}
+                            <input type="checkbox" name="user_perms_{{ user.pk }}" value="{{ codename }}" {% if codename in user.class_perms_user_only %}checked{% endif %}/>    
                             {% if codename in user.class_perms %}
                                 <span class="true" title="{{ user.class_perms|lookup:codename }}" />
                             {% else %}
@@ -43,6 +49,10 @@
                 <td>{{ group }}</td>
                 {% for codename, obj in class_perms.items %}
                     <td>
+                    {% if codename in group.class_perms %} 
+                    <input type="hidden" name="group_perms_original_{{ group.pk }}" value="{{ codename }}" />
+                    {% endif %}
+                    <input type="checkbox" name="group_perms_{{ group.pk }}" value="{{ codename }}" {% if codename in group.class_perms %}checked{% endif %}/>    
                         {% if codename in group.class_perms %}
                             <span class="true" />
                         {% else %}
@@ -56,4 +66,7 @@
         {% endfor %}
         </tbody>
     </table>
+    <a href="{{ class.get_class_permissions_url }}">Cancel</a>
+    <input type="submit" />
+    </form>
 {% endblock %}

@@ -1,0 +1,60 @@
+{% extends 'cerberus/base.html' %}
+{% load cerberus %}
+{% block content %}
+    <h1>Permissions on "{{ clsname }}"</h1>
+    <a href="{{ class.get_class_permissions_edit_url }}">Edit</a>
+    {# user perms #}
+    <table>
+        <thead>
+                <th>User</th>
+            {% for codename, obj in class_perms.items %}
+                <th title="{{ obj.description }}">{{ obj.text }}</th>
+            {% endfor %}
+        </thead>
+        <tbody>
+            {% for user in users %}
+                <tr>
+                    <td title="Groups: {% for group in user.groups.all %}{{ group }}{% if not forloop.last %}, {% endif %}{% empty %}User does not belong to any groups.{% endfor %}">{{ user.username }}</td>
+                    {% for codename, obj in class_perms.items %}
+                        <td>
+                            {% if codename in user.class_perms %}
+                                <span class="true" title="{{ user.class_perms|lookup:codename }}" />
+                            {% else %}
+                                <span class="false" />
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+            {% empty %}
+                <tr><td>No users.</tr></td>
+            {% endfor %}
+        </tbody>
+    </table>
+    {# group perms #} 
+    <table>
+        <thead>
+            <th>Group</th>
+            {% for codename, obj in class_perms.items %}
+                <th title="{{ obj.description }}">{{ obj.text }}</th>
+            {% endfor %}
+        </thead>
+        <tbody>
+        {% for group in groups %}
+            <tr>
+                <td>{{ group }}</td>
+                {% for codename, obj in class_perms.items %}
+                    <td>
+                        {% if codename in group.class_perms %}
+                            <span class="true" />
+                        {% else %}
+                            <span class="false" />
+                            {% endif %}
+                    </td>
+                {% endfor %}
+            </tr>   
+        {% empty %}
+            <tr><td>No groups are defined.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

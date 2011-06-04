@@ -10,6 +10,7 @@ options.DEFAULT_NAMES += ('cerberus', 'cerberus_implies', 'cerberus_mutex')
 
 import models
 from views import permissions_view
+from views import permissions_edit
 
 """
 When __init__ is first compiled, we generate a dictionary of Models to 
@@ -271,6 +272,15 @@ def get_class_permissions_url(cls):
 def get_object_permissions_url(self):
     return reverse(permissions_view, kwargs={'clsname': self.__class__.__name__.lower(), 'obj_pk': self.pk})
 
+@classmethod
+def get_class_permissions_edit_url(cls):
+    return reverse(permissions_edit, kwargs={'clsname': cls.__name__.lower()})
+
+def get_object_permissions_edit_url(self):
+    return reverse(permissions_edit, kwargs={'clsname': self.__class__.__name__.lower(), 'obj_pk': self.pk})
+
+setattr(Model, 'get_class_permissions_edit_url', get_class_permissions_edit_url)
+setattr(Model, 'get_object_permissions_edit_url', get_object_permissions_edit_url)
 setattr(Model, 'get_class_permissions_url', get_class_permissions_url)
 setattr(Model, 'get_object_permissions_url', get_object_permissions_url)
 

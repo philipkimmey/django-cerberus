@@ -4,10 +4,12 @@ from django.db.models import Model
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
+from django.core.urlresolvers import reverse
 
 options.DEFAULT_NAMES += ('cerberus', 'cerberus_implies', 'cerberus_mutex')
 
 import models
+from views import permissions_view
 
 """
 When __init__ is first compiled, we generate a dictionary of Models to 
@@ -43,6 +45,12 @@ class CerberusModelPermission(object):
 
 
 perms_dict = {}
+content_types = {}
+
+def get_class_content_type(cls):
+    if cls not in content_types:
+        content_types[cls] = ContentType.objects.get_for_model(cls)
+    return content_types[cls] 
 
 def model_registered(sender, **kwargs):
     """
@@ -86,6 +94,25 @@ def model_registered(sender, **kwargs):
 
 class_prepared.connect(model_registered)
 
+def get_classes():
+    return perms_dict.keys()
+
+def get_class_perms(cls):
+    """
+    Returns all class perms defined on the provided class.
+    """
+    if not issubclass(cls, Model):
+        raise Exception("get_class_perms must take a subclass of Model as first arg")
+    return perms_dict[cls].class_perms
+
+def get_object_perms(cls):
+    """
+    Returns all object perms defined on the provided class.
+    """
+    if not issubclass(cls, Model):
+        raise Exception("get_object_perms must take a subclass of Model")
+    return perms_dict[cls].object_perms
+
 def get_perm_content_type(obj, perm):
     """
     This will return the ContentType number the provided permission is
@@ -98,9 +125,14 @@ def get_perm_content_type(obj, perm):
     'pet', you can do it in very few queries.
     """
     if isinstance(obj, Model):
-        return ContentType.objects.get_for_model(
-                perms_dict[obj.__class__].object_perms[perm].cls    
-            )
+        cls = None
+        # try and get the content type via object perms
+        # if not via object perms it should be on a class
+        try:
+            cls = perms_dict[obj.__class__].object_perms[perm].cls
+        except KeyError:
+            cls = perms_dict[obj.__class__].class_perms[perm].cls
+        return get_class_content_type(cls)
     elif issubclass(obj, Model):
         return ContentType.objects.get_for_model(
                 perms_dict[obj].class_perms[perm].cls
@@ -230,6 +262,17 @@ def get_perms(self, obj):
     user_cls_perms = models.UserClassPermission.objects.filter(content_type=content_type).filter(user=self).values('codename')
     response = response.union(__extract_codenames(user_cls_perms))
     return response
+
+
+@classmethod
+def get_class_permissions_url(cls):
+    return reverse(permissions_view, kwargs={'clsname': cls.__name__.lower()})
+
+def get_object_permissions_url(self):
+    return reverse(permissions_view, kwargs={'clsname': self.__class__.__name__.lower(), 'obj_pk': self.pk})
+
+setattr(Model, 'get_class_permissions_url', get_class_permissions_url)
+setattr(Model, 'get_object_permissions_url', get_object_permissions_url)
 
 # has_perm is automatically used on User
 # because this is an auth handler.

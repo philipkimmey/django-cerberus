@@ -19,6 +19,7 @@ class BasicAnimal(models.Model):
             ),
             'class': (
                 ("pet", "Pet", "The user can pet all animals."),
+                ("eat", "Eat", "The user can eat all animals."),
             )
         }
     name = models.CharField(max_length=100)
@@ -41,12 +42,16 @@ class BasicUserTest(TestCase):
         self.assertTrue(self.user.has_perm('pet', self.fido))
         self.user.remove_perm('pet', self.fido)
         self.assertFalse(self.user.has_perm('pet', self.fido))
+        self.assertFalse(self.user.has_perm('eat', self.fido.__class__))
     def test_user_class_permissions(self):
         self.assertFalse(self.user.has_perm('pet', self.fido))
         self.assertFalse(self.user.has_perm('pet', self.fido.__class__))
         self.user.set_perm('pet', BasicAnimal)
         self.assertTrue(self.user.has_perm('pet', self.fido))
         self.assertTrue(self.user.has_perm('pet', self.fido.__class__))
+        self.assertFalse(self.user.has_perm('eat', self.fido.__class__))
+        self.user.set_perm('eat', BasicAnimal)
+        self.assertTrue(self.user.has_perm('eat', self.fido.__class__))
 
 class BasicGroupTest(TestCase):
     """
@@ -84,6 +89,18 @@ class BasicGroupTest(TestCase):
         self.user1.groups.add(self.group)
         self.assertTrue(self.user1.has_perm('pet', self.fido))
         self.assertTrue(self.user1.has_perm('pet', self.fido.__class__))
+        self.assertFalse(self.user2.has_perm('pet', self.fido))
+        self.assertFalse(self.user2.has_perm('pet', self.fido.__class__))
+        # test behavior of perm only defined on class
+        self.assertFalse(self.user1.has_perm('eat', self.fido))
+        self.assertFalse(self.user1.has_perm('eat', self.fido.__class__))
+        self.assertFalse(self.user2.has_perm('eat', self.fido))
+        self.assertFalse(self.user2.has_perm('eat', self.fido.__class__))
+        self.group.set_perm('eat', self.fido.__class__)
+        self.assertTrue(self.user1.has_perm('eat', self.fido))
+        self.assertTrue(self.user1.has_perm('eat', self.fido.__class__))
+        self.assertFalse(self.user2.has_perm('eat', self.fido))
+        self.assertFalse(self.user2.has_perm('eat', self.fido.__class__))
 
 class BasicDog(BasicAnimal):
     breed = models.CharField(max_length=100)

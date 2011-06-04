@@ -1,0 +1,13 @@
+.true {
+    background: url(icons/greencheck.png) no-repeat;
+    width: 16px;
+    height: 16px;
+    display: block;
+    text-align: center;
+}
+.false {
+    background: url(icons/redx.png) no-repeat;
+    width: 16px;
+    height: 16px;
+    display: block;
+}

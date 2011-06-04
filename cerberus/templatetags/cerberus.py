@@ -1,4 +1,5 @@
 from django import template
+from django.template.defaultfilters import register
 
 register = template.Library()
 
@@ -10,3 +11,9 @@ class CerberusNode(template.Node):
 
     def render(self, context):
         pass
+
+@register.filter(name='lookup')
+def lookup(dict, index):
+    if index in dict:
+        return dict[index]
+    return ''

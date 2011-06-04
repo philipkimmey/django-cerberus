@@ -1,17 +1,17 @@
 from django.conf.urls.defaults import *
 
-# Uncomment the next two lines to enable the admin:
-# from django.contrib import admin
-# admin.autodiscover()
+from django.contrib import admin
+admin.autodiscover()
+
+from cerberus.views import permissions_view
+from cerberus.views import permissions_edit
 
 urlpatterns = patterns('',
     # Example:
     # (r'^cerberus/', include('cerberus.foo.urls')),
+    (r'^permissions/view/(?P<clsname>[a-z]+)(?:/(?P<obj_pk>[-\w]*))?/$', permissions_view),
+    
+    (r'^permissions/edit/(?P<clsname>[a-z]+)(?:/(?P<obj_pk>[-\w]*))?/$', permissions_edit),
 
-    # Uncomment the admin/doc line below and add 'django.contrib.admindocs' 
-    # to INSTALLED_APPS to enable admin documentation:
-    # (r'^admin/doc/', include('django.contrib.admindocs.urls')),
-
-    # Uncomment the next line to enable the admin:
-    # (r'^admin/', include(admin.site.urls)),
+    (r'^admin/', include(admin.site.urls)),
 )

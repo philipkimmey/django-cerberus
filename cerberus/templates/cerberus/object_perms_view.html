@@ -1,8 +1,10 @@
 {% extends 'cerberus/base.html' %}
 {% load cerberus %}
+{% block page_title %}Permissions on {{ clsname }} "{{ object }}"{% endblock %}
 {% block content %}
     <h1>Permissions on {{ clsname }} "{{ object }}"</h1>
     <a href="{{ object.get_class_permissions_url }}">View Permissions for all {{ clsname }}</a>
+    <a href="{{ object.get_object_permissions_edit_url }}">Edit</a>
     {# user perms #}
     <table>
         <thead>

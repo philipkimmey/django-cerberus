@@ -11,6 +11,7 @@ The general ideas are:
 ### Usage
 
 (These examples are also in tests.py)
+
 ```python
 class Animal(models.Model):
     name = models.CharField(max_length=100)
